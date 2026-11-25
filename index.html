@@ -42,6 +42,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tag.new{color:#ff4d6d}.tag.go{color:#7a4dff}.tag.done{background:#38c172;color:#fff}
 .lvl{position:absolute;top:10px;left:12px;font-size:17px;background:rgba(255,255,255,.92);border-radius:20px;padding:3px 9px}
 .nm{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 10px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.96) 55%);font-weight:800;font-size:19px;text-align:center}
+.lvls{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.lv{position:relative;border:0;background:#fff;border-radius:26px;box-shadow:var(--shadow);padding:12px 12px 14px;width:min(29vw,270px);display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .15s}
+.lv:active{transform:scale(.96)}
+.lv svg{width:100%;aspect-ratio:1;border-radius:16px;display:block}
+.lv b{font-size:clamp(18px,2.4vw,24px)}.lv small{font-size:16px;color:var(--muted)}
+.lv.on{outline:5px solid var(--accent)}
+.lv .tag{top:20px;right:20px}
 .empty{grid-column:1/-1;text-align:center;font-size:24px;color:var(--muted);padding:60px 20px}
 /* paint */
 .paint{background:#fff}
@@ -304,14 +311,18 @@ pic({id:'butterfly',name:'Butterfly Garden',theme:'bugs',level:2,
 
 const THEMES=[{id:'all',name:'All'},{id:'animals',name:'Animals',ic:'🐾'},{id:'unicorns',name:'Unicorns',ic:'🦄'},{id:'fairies',name:'Fairies',ic:'🧚'},{id:'mermaids',name:'Mermaids',ic:'🧜‍♀️'},{id:'bugs',name:'Bugs',ic:'🐞'},{id:'gallery',name:'My Gallery',ic:'⭐'}];
 const PROFILES=[
- {id:'lilly',name:'Lilly',age:6,hair:'#f5d26b',shirt:'#ff8cc6',style:'long',tol:14,minLabel:10},
- {id:'maddy',name:'Maddy',age:4,hair:'#8a5a33',shirt:'#9b87f5',style:'bunches',tol:28,minLabel:12}];
+ {id:'lilly',name:'Lilly',age:6,hair:'#f5d26b',shirt:'#ff8cc6',style:'long',tol:14,minLabel:10,lvl:2},
+ {id:'maddy',name:'Maddy',age:4,hair:'#8a5a33',shirt:'#9b87f5',style:'bunches',tol:28,minLabel:12,lvl:1}];
+const LEVELS={1:{name:'Beginner',ic:'🌱'},2:{name:'Intermediate',ic:'🌼'},3:{name:'Advanced',ic:'🌳'}};
+const EASY_R=24,BIG_R=40; /* beginner: pre-colour sections smaller than EASY_R; advanced: split sections bigger than BIG_R into bands */
 
 /* ================= storage ================= */
 const KEY='colourfun-v1';
 let DB=(()=>{try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.kids)return d;}catch(e){}return{kids:{},sound:true};})();
 function saveDB(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
 const kid=id=>DB.kids[id]||(DB.kids[id]={prog:{},done:{}});
+/* older saves had no level: treat them as Intermediate */
+Object.values(DB.kids).forEach(K=>['prog','done'].forEach(t=>Object.keys(K[t]||{}).forEach(k=>{if(!k.includes('@')){K[t][k+'@2']=K[t][k];delete K[t][k];}})));
 
 /* ================= sound ================= */
 let AC=null;
@@ -325,8 +336,13 @@ const $=s=>document.querySelector(s);
 const app=$('#app');
 function lum(h){const n=parseInt(h.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255;return(.299*r+.587*g+.114*b)/255;}
 const ink=h=>lum(h)>.62?'#3a2e39':'#fff';
-function picSVG(p,filled,attrs=''){let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" ${attrs}><defs><clipPath id="c-${p.id}"><rect width="600" height="600"/></clipPath></defs><g clip-path="url(#c-${p.id})" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">`;
- p.regions.forEach((r,i)=>{s+=`<path d="${r.d}" fill="${filled===true||filled.has(i)?p.pal[r.c]:'#fff'}"/>`;});
+/* paint order: plain pictures draw regions in order; variants carry a draw list that can include clipped bands and outlines */
+const drawList=p=>p.draw||p.regions.map((_,i)=>({r:i}));
+const clipDefs=p=>(p.clips||[]).map((d,i)=>`<clipPath id="k-${p.id}-${i}"><path d="${d}"/></clipPath>`).join('');
+function regionsMarkup(p,fillOf,extra=()=>''){return drawList(p).map(it=>{if(it.o!=null)return `<path d="${it.o}" fill="none"/>`;const r=p.regions[it.r];
+ return `<path d="${r.d}" fill="${fillOf(it.r)}"${r.clip!=null?` clip-path="url(#k-${p.id}-${r.clip})"`:''}${extra(it.r)}/>`;}).join('');}
+function picSVG(p,filled,attrs=''){let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" ${attrs}><defs><clipPath id="c-${p.id}"><rect width="600" height="600"/></clipPath>${clipDefs(p)}</defs><g clip-path="url(#c-${p.id})" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">`;
+ s+=regionsMarkup(p,i=>filled===true||filled.has(i)?p.pal[p.regions[i].c]:'#fff');
  s+=`<g fill="none" stroke-width="2.6">${p.lines.map(d=>`<path d="${d}"/>`).join('')}</g>`;
  s+=p.dots.map(o=>`<path d="${o.d}" fill="${o.fill}" stroke="none"/>`).join('');
  return s+'</g></svg>';}
@@ -343,7 +359,9 @@ function enc(i){return `rgb(${i},${(i*53+17)&255},${(i*97+101)&255})`;}
 function analyse(p){if(p.an)return p.an;
  const cv=document.createElement('canvas');cv.width=cv.height=MAP;const g=cv.getContext('2d',{willReadFrequently:true});
  g.fillStyle='#000';g.fillRect(0,0,MAP,MAP);g.setTransform(MS,0,0,MS,0,0);g.lineJoin='round';g.lineCap='round';g.strokeStyle='#000';
- p.regions.forEach((r,i)=>{const pa=new Path2D(r.d);g.fillStyle=enc(i+1);g.fill(pa);g.lineWidth=3.4;g.stroke(pa);});
+ drawList(p).forEach(it=>{g.lineWidth=3.4;if(it.o!=null){g.stroke(new Path2D(it.o));return;}
+  const r=p.regions[it.r],pa=new Path2D(r.d);if(r.clip!=null){g.save();g.clip(new Path2D(p.clips[r.clip]));}
+  g.fillStyle=enc(it.r+1);g.fill(pa);g.stroke(pa);if(r.clip!=null)g.restore();});
  g.lineWidth=3;p.lines.forEach(d=>g.stroke(new Path2D(d)));
  const px=g.getImageData(0,0,MAP,MAP).data,n=p.regions.length,ids=new Int16Array(MAP*MAP);
  for(let k=0;k<MAP*MAP;k++){const r=px[k*4],gg=px[k*4+1],b=px[k*4+2];ids[k]=(r>0&&r<=n&&gg===((r*53+17)&255)&&b===((r*97+101)&255))?r:0;}
@@ -358,6 +376,34 @@ function analyse(p){if(p.an)return p.an;
   const v=Math.min(D[k],x+1,y+1,W-x,W-y);if(v>o.r){o.r=v;o.x=x;o.y=y;}}
  L.forEach(o=>{o.x=(o.x+.5)/MS;o.y=(o.y+.5)/MS;o.r=o.r/MS;});
  return p.an={ids,labels:L};}
+
+/* ================= difficulty levels ================= */
+function shadeOf(h){const n=parseInt(h.slice(1),16);let r=n>>16&255,g=n>>8&255,b=n&255;const k=lum(h)>.5?.78:1.35,cl=v=>Math.max(0,Math.min(255,Math.round(lum(h)>.5?v*k:v+(255-v)*.3)));
+ return '#'+[cl(r),cl(g),cl(b)].map(v=>v.toString(16).padStart(2,'0')).join('');}
+const VC={};
+const numOf=(p,c)=>p.num&&p.num[c]?p.num[c]:c+1;
+const pctOf=(v,pr)=>{const t=v.regions.length-v.pre.size,d=pr.filter(i=>!v.pre.has(i)).length;return t?Math.round(d/t*100):0;};
+function variant(b,lvl){const key=b.id+'@'+lvl;if(VC[key])return VC[key];
+ const v={id:b.id+'-'+lvl,key,base:b,lvl,name:b.name,theme:b.theme,pal:b.pal.slice(),regions:[],draw:[],clips:[],lines:b.lines,dots:b.dots,pre:new Set()};
+ const ba=analyse(b);
+ const keep=r=>{v.draw.push({r:v.regions.length});v.regions.push({c:r.c,d:r.d});};
+ if(lvl<3){b.regions.forEach((r,i)=>{keep(r);if(lvl===1&&i>0&&ba.labels[i].r<EASY_R)v.pre.add(i);});
+  if(lvl===1){const used=[...new Set(v.regions.filter((r,i)=>!v.pre.has(i)).map(r=>r.c))].sort((a,b)=>a-b);v.num=[];used.forEach((c,k)=>v.num[c]=k+1);}
+  return VC[key]=v;}
+ const shade={};
+ b.regions.forEach((r,i)=>{if(ba.labels[i].r<BIG_R){keep(r);return;}
+  const ang=(i===0?0:(i%2?35:-35))*Math.PI/180,nx=-Math.sin(ang),ny=Math.cos(ang),ax=Math.cos(ang),ay=Math.sin(ang);
+  let mn=1e9,mx=-1e9;for(let k=0;k<ba.ids.length;k++)if(ba.ids[k]===i+1){const x=(k%MAP+.5)/MS,y=((k/MAP|0)+.5)/MS,pr=x*nx+y*ny;if(pr<mn)mn=pr;if(pr>mx)mx=pr;}
+  const n=Math.max(3,Math.min(7,Math.round((mx-mn)/55))),w=(mx-mn)/n;
+  if(shade[r.c]==null){shade[r.c]=v.pal.length;v.pal.push(shadeOf(b.pal[r.c]));}
+  const ci=v.clips.length;v.clips.push(r.d);
+  for(let k=0;k<n;k++){const a=mn+k*w-(k?0:20),z=mn+(k+1)*w+(k===n-1?20:0),T=900;
+   const pts=[[a,-T],[a,T],[z,T],[z,-T]].flatMap(([p,t])=>[f(p*nx+t*ax),f(p*ny+t*ay)]);
+   v.draw.push({r:v.regions.length});v.regions.push({c:k%2?shade[r.c]:r.c,d:P(...pts),clip:ci});}
+  v.draw.push({o:r.d});});
+ return VC[key]=v;}
+/* sections a child actually colours at this level */
+function partsOf(v){const an=analyse(v);let n=0;v.regions.forEach((_,i)=>{if(!v.pre.has(i)&&an.labels[i].area)n++;});return n;}
 
 /* ================= navigation ================= */
 let ME=null,TAB='all',depth=0,histOK=true;
@@ -379,20 +425,30 @@ function showLibrary(){const K=kid(ME.id);
  app.querySelector('.snd').onclick=e=>{DB.sound=!DB.sound;saveDB();e.currentTarget.textContent=DB.sound?'🔊':'🔇';sfx.tap();};
  app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{sfx.tap();TAB=b.dataset.t;showLibrary();});
  const grid=app.querySelector('.grid');
- if(TAB==='gallery'){const done=PICS.filter(p=>K.done[p.id]).sort((a,b)=>K.done[b.id]-K.done[a.id]);
-  grid.innerHTML=done.length?done.map(p=>`<button class="card" data-id="${p.id}">${picSVG(p,true)}<span class="tag done">⭐</span><span class="nm">${p.name}</span></button>`).join(''):`<div class="empty">Finish a picture and it will show up here ⭐</div>`;
-  grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();showViewer(PICS.find(p=>p.id===b.dataset.id));});return;}
+ if(TAB==='gallery'){const done=[];PICS.forEach(p=>[1,2,3].forEach(l=>{const k=p.id+'@'+l;if(K.done[k])done.push([K.done[k],p,l]);}));done.sort((a,b)=>b[0]-a[0]);
+  grid.innerHTML=done.length?done.map(([,p,l])=>`<button class="card" data-id="${p.id}" data-l="${l}">${picSVG(variant(p,l),true)}<span class="lvl">${LEVELS[l].ic}</span><span class="tag done">⭐</span><span class="nm">${p.name}</span></button>`).join(''):`<div class="empty">Finish a picture and it will show up here ⭐</div>`;
+  grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();showViewer(variant(PICS.find(p=>p.id===b.dataset.id),+b.dataset.l));});return;}
  let list=PICS.filter(p=>TAB==='all'||p.theme===TAB);
  if(ME.age<5)list=list.slice().sort((a,b)=>a.level-b.level);
- grid.innerHTML=list.map(p=>{const pr=K.prog[p.id]||[],fs=new Set(pr),pct=Math.round(pr.length/p.regions.length*100);
-  const tag=pr.length&&pct<100?`<span class="tag go">${pct}%</span>`:K.done[p.id]?`<span class="tag done">Done ⭐</span>`:`<span class="tag new">NEW</span>`;
-  return `<button class="card" data-id="${p.id}">${picSVG(p,fs)}<span class="lvl">${p.level===1?'⭐':'⭐⭐'}</span>${tag}<span class="nm">${p.name}</span></button>`;}).join('');
- grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();openPicture(PICS.find(p=>p.id===b.dataset.id));});}
+ grid.innerHTML=list.map(p=>{const v=variant(p,ME.lvl),pr=K.prog[v.key]||[],fs=new Set([...v.pre,...pr]),pct=pctOf(v,pr);
+  const anyDone=[1,2,3].some(l=>K.done[p.id+'@'+l]);
+  const tag=pct>0&&pct<100?`<span class="tag go">${pct}%</span>`:anyDone?`<span class="tag done">Done ⭐</span>`:`<span class="tag new">NEW</span>`;
+  return `<button class="card" data-id="${p.id}">${picSVG(v,fs)}${tag}<span class="nm">${p.name}</span></button>`;}).join('');
+ grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();chooseLevel(PICS.find(p=>p.id===b.dataset.id));});}
+
+/* level picker shown when a picture is tapped; the child's usual level is highlighted */
+function chooseLevel(b){const K=kid(ME.id),o=document.createElement('div');o.className='over';
+ o.innerHTML=`<h2>${b.name}</h2><div class="lvls">${[1,2,3].map(l=>{const v=variant(b,l),pr=K.prog[v.key]||[],fs=new Set([...v.pre,...pr]);
+  const tag=pr.length?`<span class="tag go">${pctOf(v,pr)}%</span>`:K.done[v.key]?`<span class="tag done">⭐</span>`:'';
+  return `<button class="lv${l===ME.lvl?' on':''}" data-l="${l}">${picSVG(v,fs)}${tag}<b>${LEVELS[l].ic} ${LEVELS[l].name}</b><small>${partsOf(v)} parts · ${new Set(v.regions.filter((r,i)=>!v.pre.has(i)).map(r=>r.c)).size} colours</small></button>`;}).join('')}</div>
+  <button class="btn alt cl">Back</button>`;
+ app.appendChild(o);o.querySelector('.cl').onclick=()=>{sfx.tap();o.remove();};
+ o.querySelectorAll('.lv').forEach(e=>e.onclick=()=>{sfx.tap();o.remove();openPicture(variant(b,+e.dataset.l));});}
 
 function showViewer(p){const o=document.createElement('div');o.className='over';
  o.innerHTML=`<h2>${p.name}</h2><div class="big">${picSVG(p,true)}</div><div class="btns"><button class="btn sv">💾 Save to tablet</button><button class="btn alt ag">🖍️ Colour again</button><button class="btn alt cl">Close</button></div>`;
  app.appendChild(o);o.querySelector('.cl').onclick=()=>o.remove();o.querySelector('.sv').onclick=()=>savePNG(p);
- o.querySelector('.ag').onclick=()=>{delete kid(ME.id).prog[p.id];saveDB();o.remove();openPicture(p);};}
+ o.querySelector('.ag').onclick=()=>{delete kid(ME.id).prog[p.key];saveDB();o.remove();openPicture(p);};}
 
 async function savePNG(p){try{const S=1400;const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(picSVG(p,true,`width="${S}" height="${S}"`));
  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});
@@ -408,20 +464,20 @@ const ICON_BACK='<svg viewBox="0 0 24 24"><path d="M15 4L7 12L15 20" fill="none"
 const ICON_FIT='<svg viewBox="0 0 24 24" fill="none" stroke="#b0306f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3V9H3M15 3V9H21M9 21V15H3M15 21V15H21"/></svg>';
 function openPicture(p){push(2);cleanupPaint();
  const K=kid(ME.id),an=analyse(p),N=p.regions.length;
- const filled=new Set(K.prog[p.id]||[]);if(filled.size>=N)filled.clear();
- an.labels.forEach((L,i)=>{if(!L.area)filled.add(i);});
+ const filled=new Set(K.prog[p.key]||[]);if(filled.size>=N)filled.clear();
+ an.labels.forEach((L,i)=>{if(!L.area||p.pre.has(i))filled.add(i);});
  const rem=p.pal.map(()=>0),tot=p.pal.map(()=>0);
  p.regions.forEach((r,i)=>{tot[r.c]++;if(!filled.has(i))rem[r.c]++;});
  const fsz=an.labels.map(L=>Math.max(8,Math.min(40,L.r*1.1)));
- app.innerHTML=`<div class="screen paint"><div id="stage"><svg><defs><pattern id="chk" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#e8e8e8"/><rect width="7" height="7" fill="#bdbdbd"/><rect x="7" y="7" width="7" height="7" fill="#bdbdbd"/></pattern><clipPath id="clipw"><rect width="600" height="600"/></clipPath></defs>
+ app.innerHTML=`<div class="screen paint"><div id="stage"><svg><defs><pattern id="chk" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#e8e8e8"/><rect width="7" height="7" fill="#bdbdbd"/><rect x="7" y="7" width="7" height="7" fill="#bdbdbd"/></pattern><clipPath id="clipw"><rect width="600" height="600"/></clipPath>${clipDefs(p)}</defs>
   <g id="world"><g clip-path="url(#clipw)"><g id="rg" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"></g><g id="ln" fill="none" stroke="#2b2b2b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></g><g id="dt"></g><g id="lb"></g><g id="fx"></g></g><rect width="600" height="600" fill="none" stroke="#2b2b2b" stroke-width="2"/></g></svg>
   <button class="fab back">${ICON_BACK}</button><button class="fab hint">💡</button><button class="fab fit">${ICON_FIT}</button></div><div class="pal"></div></div>`;
  const stage=$('#stage'),svg=stage.querySelector('svg'),world=$('#world'),rg=$('#rg'),lb=$('#lb'),fx=$('#fx'),pal=app.querySelector('.pal');
- rg.innerHTML=p.regions.map((r,i)=>`<path class="rg" d="${r.d}" fill="${filled.has(i)?p.pal[r.c]:'#fff'}"/>`).join('');
+ rg.innerHTML=regionsMarkup(p,i=>filled.has(i)?p.pal[p.regions[i].c]:'#fff',i=>` class="rg" data-i="${i}"`);
  $('#ln').innerHTML=p.lines.map(d=>`<path d="${d}"/>`).join('');
  $('#dt').innerHTML=p.dots.map(o=>`<path d="${o.d}" fill="${o.fill}"/>`).join('');
- lb.innerHTML=an.labels.map((L,i)=>`<text class="lb" x="${f(L.x)}" y="${f(L.y)}" font-size="${f(fsz[i])}">${p.regions[i].c+1}</text>`).join('');
- const els=[...rg.children],lbls=[...lb.children];
+ lb.innerHTML=an.labels.map((L,i)=>`<text class="lb" x="${f(L.x)}" y="${f(L.y)}" font-size="${f(fsz[i])}">${numOf(p,p.regions[i].c)}</text>`).join('');
+ const els=[];rg.querySelectorAll('[data-i]').forEach(e=>els[+e.dataset.i]=e);const lbls=[...lb.children];
  let sel=null,s=1,tx=0,ty=0,W=0,H=0,fitS=1,hintI=0,saveT=0,anim=0;
 
  /* view */
@@ -437,7 +493,7 @@ function openPicture(p){push(2);cleanupPaint();
 
  /* palette */
  const order=p.pal.map((_,c)=>c).filter(c=>tot[c]>0);
- pal.innerHTML=order.map(c=>`<button class="sw${rem[c]?'':' gone'}" data-c="${c}"><i style="background:${p.pal[c]};color:${ink(p.pal[c])}">${c+1}</i></button>`).join('');
+ pal.innerHTML=order.map(c=>`<button class="sw${rem[c]?'':' gone'}" data-c="${c}"><i style="background:${p.pal[c]};color:${ink(p.pal[c])}">${numOf(p,c)}</i></button>`).join('');
  const swEl=c=>pal.querySelector(`.sw[data-c="${c}"]`);
  pal.onclick=e=>{const b=e.target.closest('.sw');if(!b||b.classList.contains('gone'))return;ac();sfx.tap();select(+b.dataset.c);};
  function ring(c){const b=swEl(c);if(b)b.style.setProperty('--p',((tot[c]-rem[c])/tot[c]*360).toFixed(1)+'deg');}
@@ -454,7 +510,7 @@ function openPicture(p){push(2);cleanupPaint();
   for(let dy=-R;dy<=R;dy++){const y=cy+dy;if(y<0||y>=MAP)continue;for(let dx=-R;dx<=R;dx++){const d=dx*dx+dy*dy;if(d>=bd)continue;const x=cx+dx;if(x<0||x>=MAP)continue;const id=an.ids[y*MAP+x];if(id&&canFill(id-1)){bd=d;best=id-1;}}}
   return best;}
  function ripple(x,y,col){const e=document.createElement('div');e.className='ripple';e.style.left=x+'px';e.style.top=y+'px';e.style.setProperty('--c',col);stage.appendChild(e);setTimeout(()=>e.remove(),520);}
- function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{K.prog[p.id]=[...filled];saveDB();},250);}
+ function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{K.prog[p.key]=[...filled];saveDB();},250);}
  function fill(i,sx,sy){filled.add(i);const c=p.regions[i].c;els[i].setAttribute('fill',p.pal[c]);if(lbls[i])lbls[i].style.display='none';rem[c]--;
   ripple(sx,sy,p.pal[c]);sfx.pop();ring(c);persist();if(!rem[c])colourDone(c);}
  function colourDone(c){sfx.chime();const b=swEl(c);if(b){b.classList.remove('on');b.classList.add('gone');}
@@ -463,7 +519,7 @@ function openPicture(p){push(2);cleanupPaint();
  function paintAt(x,y,isTap){if(sel==null)return;const w=toWorld(x,y);const i=pick(w.x,w.y,ME.tol/s*MS);
   if(i>=0){fill(i,x,y);return;}
   if(isTap){const id=idAt(w.x,w.y);if(id&&!filled.has(id-1)&&p.regions[id-1].c!==sel)nudge(p.regions[id-1].c);}}
- function finished(){clearTimeout(saveT);delete K.prog[p.id];K.done[p.id]=Date.now();saveDB();sfx.win();confetti();
+ function finished(){clearTimeout(saveT);delete K.prog[p.key];K.done[p.key]=Date.now();saveDB();sfx.win();confetti();
   const o=document.createElement('div');o.className='over';
   o.innerHTML=`<h2>Well done, ${ME.name}! 🎉</h2><div class="big">${picSVG(p,true)}</div><div class="btns"><button class="btn sv">💾 Save to tablet</button><button class="btn alt mp">🖼️ More pictures</button></div>`;
   app.appendChild(o);o.querySelector('.sv').onclick=()=>savePNG(p);o.querySelector('.mp').onclick=()=>goBack();}
@@ -496,7 +552,7 @@ function openPicture(p){push(2);cleanupPaint();
  stage.querySelector('.hint').onclick=hint;
  stage.querySelector('.fit').onclick=()=>{sfx.tap();const v=fitView();animateTo(v.s,v.tx,v.ty);};
 
- cleanupPaint=()=>{ro.disconnect();cancelAnimationFrame(anim);if(saveT){clearTimeout(saveT);K.prog[p.id]=[...filled];if(K.prog[p.id].length===0||filled.size>=N)delete K.prog[p.id];saveDB();}cleanupPaint=()=>{};};
+ cleanupPaint=()=>{ro.disconnect();cancelAnimationFrame(anim);if(saveT){clearTimeout(saveT);K.prog[p.key]=[...filled];if(K.prog[p.key].length===0||filled.size>=N)delete K.prog[p.key];saveDB();}cleanupPaint=()=>{};};
  resize();
  const first=order.find(c=>rem[c]>0);if(first!=null)select(first);else setTimeout(finished,300);}
 
