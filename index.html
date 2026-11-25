@@ -559,7 +559,11 @@ function openPicture(p){push(2);cleanupPaint();
 /* ================= start ================= */
 try{history.replaceState({d:0},'');}catch(e){histOK=false;}
 showWho();
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+ /* pick up new versions as soon as they're published: check on open and whenever the app comes back to the front, then reload once */
+ const had=!!navigator.serviceWorker.controller;let reloaded=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!reloaded&&depth<2){reloaded=true;location.reload();}});
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update();});}).catch(()=>{});}
 </script>
 </body>
 </html>

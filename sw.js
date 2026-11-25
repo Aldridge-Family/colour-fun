@@ -1,5 +1,5 @@
 // Offline cache for Colour Fun. Bump VERSION when files change.
-const VERSION = 'colourfun-v2';
+const VERSION = 'colourfun-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -12,7 +12,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).then(r => {
+    // no-cache: always check GitHub for a newer copy instead of trusting the browser's 10-minute cache
+    fetch(e.request, { cache: 'no-cache' }).then(r => {
       const copy = r.clone();
       caches.open(VERSION).then(c => c.put(e.request, copy));
       return r;
