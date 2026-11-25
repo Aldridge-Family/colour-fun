@@ -43,7 +43,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lvl{position:absolute;top:10px;left:12px;font-size:17px;background:rgba(255,255,255,.92);border-radius:20px;padding:3px 9px}
 .nm{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 10px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.96) 55%);font-weight:800;font-size:19px;text-align:center}
 .lvls{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-.lv{position:relative;border:0;background:#fff;border-radius:26px;box-shadow:var(--shadow);padding:12px 12px 14px;width:min(29vw,270px);display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .15s}
+.lv{position:relative;border:0;background:#fff;border-radius:26px;box-shadow:var(--shadow);padding:12px 12px 14px;width:min(22vw,250px);display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .15s}
 .lv:active{transform:scale(.96)}
 .lv svg{width:100%;aspect-ratio:1;border-radius:16px;display:block}
 .lv b{font-size:clamp(18px,2.4vw,24px)}.lv small{font-size:16px;color:var(--muted)}
@@ -309,11 +309,52 @@ pic({id:'butterfly',name:'Butterfly Garden',theme:'bugs',level:2,
  l('M293 198C280 160 260 145 247 141M307 198C320 160 340 145 353 141');
 });
 
-const THEMES=[{id:'all',name:'All'},{id:'animals',name:'Animals',ic:'🐾'},{id:'unicorns',name:'Unicorns',ic:'🦄'},{id:'fairies',name:'Fairies',ic:'🧚'},{id:'mermaids',name:'Mermaids',ic:'🧜‍♀️'},{id:'bugs',name:'Bugs',ic:'🐞'},{id:'gallery',name:'My Gallery',ic:'⭐'}];
+/* ---------- patterns: mandalas built from rings (radial symmetry) ---------- */
+const MC=300;
+function PETAL(r0,r1,w,ang){const a=ang*Math.PI/180,c=Math.cos(a),s=Math.sin(a),px=-s,py=c,m=(r0+r1)/2;
+ const p=(r,o)=>`${f(MC+r*c+o*px)} ${f(MC+r*s+o*py)}`;
+ return `M${p(r0,0)}Q${p(m,w)} ${p(r1,0)}Q${p(m,-w)} ${p(r0,0)}Z`;}
+const ring=(n,fn,off=0)=>{for(let i=0;i<n;i++)fn(off+i*360/n,i);};
+const at=(r,ang)=>[f(MC+r*Math.cos(ang*Math.PI/180)),f(MC+r*Math.sin(ang*Math.PI/180))];
+
+pic({id:'flower-mandala',name:'Flower Mandala',theme:'patterns',level:2,
+ pal:['#ffe3ef','#ff6fa8','#ffd84d','#7cc4ff','#b48cff','#ff9f5a','#5fd3a5','#ffffff','#e0457b','#4a68ad','#ffb3d1','#2fb5b5']},(a,l,d)=>{
+ a(1,R(0,0,600,600));
+ [[62,62],[538,62],[62,538],[538,538]].forEach(([x,y])=>{a(5,FL(x,y,36));a(3,C(x,y,13));});
+ a(2,SC(MC,MC,290,290,28,.6)); a(11,C(MC,MC,262));
+ ring(28,g=>{const [x,y]=at(250,g);a(8,C(x,y,7));});
+ ring(16,g=>a(4,PETAL(150,240,34,g)));
+ ring(16,g=>a(7,PETAL(178,236,15,g)),11.25);
+ a(3,STAR(MC,MC,168,16,.84)); a(9,C(MC,MC,140));
+ ring(12,g=>a(6,PETAL(62,138,38,g)));
+ ring(12,g=>a(5,PETAL(84,134,17,g)),15);
+ ring(24,g=>{const [x,y]=at(146,g);a(12,C(x,y,5.5));},7.5);
+ a(10,SC(MC,MC,70,70,12,.6)); a(3,C(MC,MC,46)); a(2,FL(MC,MC,26)); a(8,C(MC,MC,10));
+ ring(16,g=>{const [x1,y1]=at(160,g),[x2,y2]=at(226,g);l(`M${x1} ${y1}L${x2} ${y2}`);});
+ ring(12,g=>{const [x1,y1]=at(72,g),[x2,y2]=at(126,g);l(`M${x1} ${y1}L${x2} ${y2}`);});
+});
+
+pic({id:'star-mandala',name:'Star Mandala',theme:'patterns',level:2,
+ pal:['#e6f4ff','#4a68ad','#7cc4ff','#ffd84d','#ff8cc6','#b48cff','#ffffff','#5fd3a5','#ff9f5a','#2d2a6b','#ffb3d1','#e0457b']},(a,l,d)=>{
+ a(1,R(0,0,600,600));
+ [[70,70],[530,70],[70,530],[530,530]].forEach(([x,y])=>{a(4,STAR(x,y,42,8,.5,0));a(5,C(x,y,12));});
+ a(2,C(MC,MC,286)); a(3,SC(MC,MC,270,270,36,.6)); a(7,C(MC,MC,244));
+ ring(24,g=>a(6,PETAL(200,244,20,g)));
+ ring(24,g=>{const [x,y]=at(222,g);a(4,STAR(x,y,10,4,.45,g));},7.5);
+ a(8,STAR(MC,MC,200,12,.72)); a(10,C(MC,MC,150));
+ ring(12,g=>{a(9,PETAL(90,198,26,g));},15);
+ ring(12,g=>{const [x,y]=at(170,g);a(11,HEART(x,y,12));},15);
+ a(5,STAR(MC,MC,148,8,.6,-90)); a(12,STAR(MC,MC,148,8,.6,-67.5));
+ a(3,C(MC,MC,82)); ring(8,g=>a(7,PETAL(30,80,16,g)),22.5); ring(8,g=>a(4,PETAL(26,74,22,g)));
+ a(2,C(MC,MC,24)); a(4,STAR(MC,MC,20,6,.5));
+});
+
+const THEMES=[{id:'all',name:'All'},{id:'animals',name:'Animals',ic:'🐾'},{id:'unicorns',name:'Unicorns',ic:'🦄'},{id:'fairies',name:'Fairies',ic:'🧚'},{id:'mermaids',name:'Mermaids',ic:'🧜‍♀️'},{id:'bugs',name:'Bugs',ic:'🐞'},{id:'patterns',name:'Patterns',ic:'✨'},{id:'gallery',name:'My Gallery',ic:'⭐'}];
 const PROFILES=[
  {id:'lilly',name:'Lilly',age:6,hair:'#f5d26b',shirt:'#ff8cc6',style:'long',tol:14,minLabel:10,lvl:2},
  {id:'maddy',name:'Maddy',age:4,hair:'#8a5a33',shirt:'#9b87f5',style:'bunches',tol:28,minLabel:12,lvl:1}];
-const LEVELS={1:{name:'Beginner',ic:'🌱'},2:{name:'Intermediate',ic:'🌼'},3:{name:'Advanced',ic:'🌳'}};
+const LEVELS={1:{name:'Beginner',ic:'🌱'},2:{name:'Intermediate',ic:'🌼'},3:{name:'Advanced',ic:'🌳'},4:{name:'Expert',ic:'🏆'}};
+const LVLS=[1,2,3,4];
 const EASY_R=24,BIG_R=40; /* beginner: pre-colour sections smaller than EASY_R; advanced: split sections bigger than BIG_R into bands */
 
 /* ================= storage ================= */
@@ -355,7 +396,8 @@ function confetti(){const cols=['#ff6fae','#ffe36e','#7cc4ff','#96e6a1','#b9a2ff
 
 /* ================= picture analysis: region map + number positions ================= */
 const MAP=480,MS=MAP/600;
-function enc(i){return `rgb(${i},${(i*53+17)&255},${(i*97+101)&255})`;}
+/* region id -> unique colour for the hit map (supports up to 4095 sections) */
+function enc(i){return `rgb(${i&255},${((i>>8)<<4)|((i*7)&15)},${(i*97+101)&255})`;}
 function analyse(p){if(p.an)return p.an;
  const cv=document.createElement('canvas');cv.width=cv.height=MAP;const g=cv.getContext('2d',{willReadFrequently:true});
  g.fillStyle='#000';g.fillRect(0,0,MAP,MAP);g.setTransform(MS,0,0,MS,0,0);g.lineJoin='round';g.lineCap='round';g.strokeStyle='#000';
@@ -364,7 +406,7 @@ function analyse(p){if(p.an)return p.an;
   g.fillStyle=enc(it.r+1);g.fill(pa);g.stroke(pa);if(r.clip!=null)g.restore();});
  g.lineWidth=3;p.lines.forEach(d=>g.stroke(new Path2D(d)));
  const px=g.getImageData(0,0,MAP,MAP).data,n=p.regions.length,ids=new Int16Array(MAP*MAP);
- for(let k=0;k<MAP*MAP;k++){const r=px[k*4],gg=px[k*4+1],b=px[k*4+2];ids[k]=(r>0&&r<=n&&gg===((r*53+17)&255)&&b===((r*97+101)&255))?r:0;}
+ for(let k=0;k<MAP*MAP;k++){const r=px[k*4],gg=px[k*4+1],b=px[k*4+2];const id=r|((gg>>4)<<8);ids[k]=(id>0&&id<=n&&(gg&15)===((id*7)&15)&&b===((id*97+101)&255))?id:0;}
  const D=new Float32Array(MAP*MAP);for(let k=0;k<D.length;k++)D[k]=ids[k]?1e6:0;
  const W=MAP,S2=1.4142;
  for(let y=0;y<W;y++)for(let x=0;x<W;x++){const k=y*W+x;if(!D[k])continue;let v=D[k];
@@ -378,30 +420,54 @@ function analyse(p){if(p.an)return p.an;
  return p.an={ids,labels:L};}
 
 /* ================= difficulty levels ================= */
-function shadeOf(h){const n=parseInt(h.slice(1),16);let r=n>>16&255,g=n>>8&255,b=n&255;const k=lum(h)>.5?.78:1.35,cl=v=>Math.max(0,Math.min(255,Math.round(lum(h)>.5?v*k:v+(255-v)*.3)));
- return '#'+[cl(r),cl(g),cl(b)].map(v=>v.toString(16).padStart(2,'0')).join('');}
+const hex=(r,g,b)=>'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const rgbOf=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255];};
+/* shade k=1 is a deeper version of the colour, k=2 a lighter one (very light colours go deeper twice instead) */
+function shadeOf(h,k=1){const [r,g,b]=rgbOf(h),L=lum(h);
+ if(k===1)return L>.5?hex(r*.78,g*.78,b*.78):hex(r+(255-r)*.3,g+(255-g)*.3,b+(255-b)*.3);
+ return L>.85?hex(r*.9,g*.9,b*.9):L>.5?hex(r+(255-r)*.42,g+(255-g)*.42,b+(255-b)*.42):hex(r+(255-r)*.6,g+(255-g)*.6,b+(255-b)*.6);}
 const VC={};
 const numOf=(p,c)=>p.num&&p.num[c]?p.num[c]:c+1;
 const pctOf=(v,pr)=>{const t=v.regions.length-v.pre.size,d=pr.filter(i=>!v.pre.has(i)).length;return t?Math.round(d/t*100):0;};
+const BIG_PX=7000,MOS_PX=3500,MOS_RW=34,MOS_ARC=42,MOS_MIN=26,MOS_MINPX=30; /* expert mosaic: ring width, tile arc length, smallest section to tile, slivers below this (map px) come pre-coloured */
 function variant(b,lvl){const key=b.id+'@'+lvl;if(VC[key])return VC[key];
  const v={id:b.id+'-'+lvl,key,base:b,lvl,name:b.name,theme:b.theme,pal:b.pal.slice(),regions:[],draw:[],clips:[],lines:b.lines,dots:b.dots,pre:new Set()};
- const ba=analyse(b);
+ const ba=analyse(b),sort={};b.pal.forEach((_,c)=>sort[c]=c*10);
  const keep=r=>{v.draw.push({r:v.regions.length});v.regions.push({c:r.c,d:r.d});};
+ const shade={},shadeIdx=(c,k)=>{if(!k)return c;const s=c+':'+k;if(shade[s]==null){shade[s]=v.pal.length;sort[v.pal.length]=c*10+k;v.pal.push(shadeOf(b.pal[c],k));}return shade[s];};
+ /* number the colours actually used 1..n, with each colour's shades right after it */
+ const renumber=()=>{const used=[...new Set(v.regions.filter((r,i)=>!v.pre.has(i)).map(r=>r.c))].sort((x,y)=>sort[x]-sort[y]);v.num=[];used.forEach((c,k)=>v.num[c]=k+1);};
+ const pixelsOf=i=>{const out=[];for(let k=0;k<ba.ids.length;k++)if(ba.ids[k]===i+1)out.push([(k%MAP+.5)/MS,((k/MAP|0)+.5)/MS]);return out;};
  if(lvl<3){b.regions.forEach((r,i)=>{keep(r);if(lvl===1&&i>0&&ba.labels[i].r<EASY_R)v.pre.add(i);});
-  if(lvl===1){const used=[...new Set(v.regions.filter((r,i)=>!v.pre.has(i)).map(r=>r.c))].sort((a,b)=>a-b);v.num=[];used.forEach((c,k)=>v.num[c]=k+1);}
-  return VC[key]=v;}
- const shade={};
- b.regions.forEach((r,i)=>{if(ba.labels[i].r<BIG_R){keep(r);return;}
-  const ang=(i===0?0:(i%2?35:-35))*Math.PI/180,nx=-Math.sin(ang),ny=Math.cos(ang),ax=Math.cos(ang),ay=Math.sin(ang);
-  let mn=1e9,mx=-1e9;for(let k=0;k<ba.ids.length;k++)if(ba.ids[k]===i+1){const x=(k%MAP+.5)/MS,y=((k/MAP|0)+.5)/MS,pr=x*nx+y*ny;if(pr<mn)mn=pr;if(pr>mx)mx=pr;}
-  const n=Math.max(3,Math.min(7,Math.round((mx-mn)/55))),w=(mx-mn)/n;
-  if(shade[r.c]==null){shade[r.c]=v.pal.length;v.pal.push(shadeOf(b.pal[r.c]));}
+  if(lvl===1&&b.regions.length-v.pre.size<6){const big=b.regions.map((_,i)=>i).sort((x,y)=>ba.labels[y].area-ba.labels[x].area).slice(0,8);v.pre=new Set(b.regions.map((_,i)=>i).filter(i=>!big.includes(i)));}
+  if(lvl===1)renumber();return VC[key]=v;}
+ if(lvl===3){
+  b.regions.forEach((r,i)=>{if(ba.labels[i].r<BIG_R&&ba.labels[i].area<BIG_PX){keep(r);return;}
+   const ang=(i===0?0:(i%2?35:-35))*Math.PI/180,nx=-Math.sin(ang),ny=Math.cos(ang),ax=Math.cos(ang),ay=Math.sin(ang);
+   let mn=1e9,mx=-1e9;pixelsOf(i).forEach(([x,y])=>{const pr=x*nx+y*ny;if(pr<mn)mn=pr;if(pr>mx)mx=pr;});
+   const n=Math.max(3,Math.min(7,Math.round((mx-mn)/55))),w=(mx-mn)/n,ci=v.clips.length;v.clips.push(r.d);
+   for(let k=0;k<n;k++){const a=mn+k*w-(k?0:20),z=mn+(k+1)*w+(k===n-1?20:0),T=900;
+    const pts=[[a,-T],[a,T],[z,T],[z,-T]].flatMap(([p,t])=>[f(p*nx+t*ax),f(p*ny+t*ay)]);
+    v.draw.push({r:v.regions.length});v.regions.push({c:shadeIdx(r.c,k%2),d:P(...pts),clip:ci});}
+   v.draw.push({o:r.d});});
+  renumber();return VC[key]=v;}
+ /* level 4 (Expert): curved mosaic tiles in three shades, rings centred on each section */
+ const TAU=Math.PI*2,pt=(cx,cy,r,a)=>`${f(cx+r*Math.cos(a))} ${f(cy+r*Math.sin(a))}`;
+ b.regions.forEach((r,i)=>{const L=ba.labels[i];if(L.r<MOS_MIN&&L.area<MOS_PX){keep(r);return;}
+  const px=pixelsOf(i);let cx=0,cy=0;px.forEach(([x,y])=>{cx+=x;cy+=y;});cx/=px.length;cy/=px.length;  /* rings centre on the section's middle */
+  const RW=MOS_RW,cells=new Map();
+  const nsOf=ring=>ring===0?1:Math.max(5,Math.round(TAU*(ring+.5)*RW/MOS_ARC));
+  px.forEach(([x,y])=>{const ring=Math.floor(Math.hypot(x-cx,y-cy)/RW),ns=nsOf(ring);let an=Math.atan2(y-cy,x-cx);if(an<0)an+=TAU;
+   const sec=Math.floor(an/TAU*ns+(ring%2)*.5)%ns,k=ring*1000+sec;cells.set(k,(cells.get(k)||0)+1);});
   const ci=v.clips.length;v.clips.push(r.d);
-  for(let k=0;k<n;k++){const a=mn+k*w-(k?0:20),z=mn+(k+1)*w+(k===n-1?20:0),T=900;
-   const pts=[[a,-T],[a,T],[z,T],[z,-T]].flatMap(([p,t])=>[f(p*nx+t*ax),f(p*ny+t*ay)]);
-   v.draw.push({r:v.regions.length});v.regions.push({c:k%2?shade[r.c]:r.c,d:P(...pts),clip:ci});}
+  [...cells.keys()].sort((x,y)=>x-y).forEach(k=>{const ring=k/1000|0,sec=k%1000,ns=nsOf(ring),off=(ring%2)*.5;let d;
+   if(ring===0)d=C(cx,cy,RW);
+   else{const a1=(sec-off)/ns*TAU,a2=(sec+1-off)/ns*TAU,r1=ring*RW,r2=(ring+1)*RW;
+    d=`M${pt(cx,cy,r1,a1)}L${pt(cx,cy,r2,a1)}A${r2} ${r2} 0 0 1 ${pt(cx,cy,r2,a2)}L${pt(cx,cy,r1,a2)}A${r1} ${r1} 0 0 0 ${pt(cx,cy,r1,a1)}Z`;}
+   const idx=v.regions.length;v.draw.push({r:idx});v.regions.push({c:shadeIdx(r.c,(ring+sec)%3),d,clip:ci});
+   if(cells.get(k)<MOS_MINPX)v.pre.add(idx);});
   v.draw.push({o:r.d});});
- return VC[key]=v;}
+ renumber();return VC[key]=v;}
 /* sections a child actually colours at this level */
 function partsOf(v){const an=analyse(v);let n=0;v.regions.forEach((_,i)=>{if(!v.pre.has(i)&&an.labels[i].area)n++;});return n;}
 
@@ -425,20 +491,20 @@ function showLibrary(){const K=kid(ME.id);
  app.querySelector('.snd').onclick=e=>{DB.sound=!DB.sound;saveDB();e.currentTarget.textContent=DB.sound?'🔊':'🔇';sfx.tap();};
  app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{sfx.tap();TAB=b.dataset.t;showLibrary();});
  const grid=app.querySelector('.grid');
- if(TAB==='gallery'){const done=[];PICS.forEach(p=>[1,2,3].forEach(l=>{const k=p.id+'@'+l;if(K.done[k])done.push([K.done[k],p,l]);}));done.sort((a,b)=>b[0]-a[0]);
+ if(TAB==='gallery'){const done=[];PICS.forEach(p=>LVLS.forEach(l=>{const k=p.id+'@'+l;if(K.done[k])done.push([K.done[k],p,l]);}));done.sort((a,b)=>b[0]-a[0]);
   grid.innerHTML=done.length?done.map(([,p,l])=>`<button class="card" data-id="${p.id}" data-l="${l}">${picSVG(variant(p,l),true)}<span class="lvl">${LEVELS[l].ic}</span><span class="tag done">⭐</span><span class="nm">${p.name}</span></button>`).join(''):`<div class="empty">Finish a picture and it will show up here ⭐</div>`;
   grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();showViewer(variant(PICS.find(p=>p.id===b.dataset.id),+b.dataset.l));});return;}
  let list=PICS.filter(p=>TAB==='all'||p.theme===TAB);
  if(ME.age<5)list=list.slice().sort((a,b)=>a.level-b.level);
  grid.innerHTML=list.map(p=>{const v=variant(p,ME.lvl),pr=K.prog[v.key]||[],fs=new Set([...v.pre,...pr]),pct=pctOf(v,pr);
-  const anyDone=[1,2,3].some(l=>K.done[p.id+'@'+l]);
+  const anyDone=LVLS.some(l=>K.done[p.id+'@'+l]);
   const tag=pct>0&&pct<100?`<span class="tag go">${pct}%</span>`:anyDone?`<span class="tag done">Done ⭐</span>`:`<span class="tag new">NEW</span>`;
   return `<button class="card" data-id="${p.id}">${picSVG(v,fs)}${tag}<span class="nm">${p.name}</span></button>`;}).join('');
  grid.querySelectorAll('.card').forEach(b=>b.onclick=()=>{sfx.tap();chooseLevel(PICS.find(p=>p.id===b.dataset.id));});}
 
 /* level picker shown when a picture is tapped; the child's usual level is highlighted */
 function chooseLevel(b){const K=kid(ME.id),o=document.createElement('div');o.className='over';
- o.innerHTML=`<h2>${b.name}</h2><div class="lvls">${[1,2,3].map(l=>{const v=variant(b,l),pr=K.prog[v.key]||[],fs=new Set([...v.pre,...pr]);
+ o.innerHTML=`<h2>${b.name}</h2><div class="lvls">${LVLS.map(l=>{const v=variant(b,l),pr=K.prog[v.key]||[],fs=new Set([...v.pre,...pr]);
   const tag=pr.length?`<span class="tag go">${pctOf(v,pr)}%</span>`:K.done[v.key]?`<span class="tag done">⭐</span>`:'';
   return `<button class="lv${l===ME.lvl?' on':''}" data-l="${l}">${picSVG(v,fs)}${tag}<b>${LEVELS[l].ic} ${LEVELS[l].name}</b><small>${partsOf(v)} parts · ${new Set(v.regions.filter((r,i)=>!v.pre.has(i)).map(r=>r.c)).size} colours</small></button>`;}).join('')}</div>
   <button class="btn alt cl">Back</button>`;
@@ -492,7 +558,7 @@ function openPicture(p){push(2);cleanupPaint();
  const toWorld=(x,y)=>({x:(x-tx)/s,y:(y-ty)/s});
 
  /* palette */
- const order=p.pal.map((_,c)=>c).filter(c=>tot[c]>0);
+ const order=p.pal.map((_,c)=>c).filter(c=>tot[c]>0).sort((x,y)=>numOf(p,x)-numOf(p,y));
  pal.innerHTML=order.map(c=>`<button class="sw${rem[c]?'':' gone'}" data-c="${c}"><i style="background:${p.pal[c]};color:${ink(p.pal[c])}">${numOf(p,c)}</i></button>`).join('');
  const swEl=c=>pal.querySelector(`.sw[data-c="${c}"]`);
  pal.onclick=e=>{const b=e.target.closest('.sw');if(!b||b.classList.contains('gone'))return;ac();sfx.tap();select(+b.dataset.c);};
@@ -515,7 +581,7 @@ function openPicture(p){push(2);cleanupPaint();
   ripple(sx,sy,p.pal[c]);sfx.pop();ring(c);persist();if(!rem[c])colourDone(c);}
  function colourDone(c){sfx.chime();const b=swEl(c);if(b){b.classList.remove('on');b.classList.add('gone');}
   const left=order.filter(k=>rem[k]>0);if(!left.length){sel=null;setTimeout(finished,700);return;}
-  const nxt=left.find(k=>k>c);setTimeout(()=>select(nxt!=null?nxt:left[0]),380);}
+  const nxt=order.slice(order.indexOf(c)+1).find(k=>rem[k]>0);setTimeout(()=>select(nxt!=null?nxt:left[0]),380);}
  function paintAt(x,y,isTap){if(sel==null)return;const w=toWorld(x,y);const i=pick(w.x,w.y,ME.tol/s*MS);
   if(i>=0){fill(i,x,y);return;}
   if(isTap){const id=idAt(w.x,w.y);if(id&&!filled.has(id-1)&&p.regions[id-1].c!==sel)nudge(p.regions[id-1].c);}}

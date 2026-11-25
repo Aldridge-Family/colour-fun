@@ -1,5 +1,5 @@
 // Offline cache for Colour Fun. Bump VERSION when files change.
-const VERSION = 'colourfun-v3';
+const VERSION = 'colourfun-v4';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
