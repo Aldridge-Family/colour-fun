@@ -349,6 +349,85 @@ pic({id:'star-mandala',name:'Star Mandala',theme:'patterns',level:2,
  a(2,C(MC,MC,24)); a(4,STAR(MC,MC,20,6,.5));
 });
 
+/* petal pointing away from any centre point; seeded random for repeatable stained glass */
+function PETALAT(cx,cy,r0,r1,w,ang){const a=ang*Math.PI/180,c=Math.cos(a),s=Math.sin(a),px=-s,py=c,m=(r0+r1)/2;
+ const p=(r,o)=>`${f(cx+r*c+o*px)} ${f(cy+r*s+o*py)}`;return `M${p(r0,0)}Q${p(m,w)} ${p(r1,0)}Q${p(m,-w)} ${p(r0,0)}Z`;}
+const rot=(cx,cy,r,ang)=>[f(cx+r*Math.cos(ang*Math.PI/180)),f(cy+r*Math.sin(ang*Math.PI/180))];
+function rng(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};}
+
+pic({id:'butterfly-mandala',name:'Butterfly Mandala',theme:'patterns',level:2,
+ pal:['#eef6ff','#b48cff','#ff8cc6','#ffd84d','#7cc4ff','#5fd3a5','#ff9f5a','#ffffff','#3a2e39','#e0457b','#4a68ad','#ffb3d1']},(a,l,d)=>{
+ a(1,R(0,0,600,600));
+ [[70,560],[530,560],[300,575]].forEach(([x,y],i)=>{a(i%2?12:3,FL(x,y,20));a(4,C(x,y,7));});
+ [[60,60],[540,60],[300,40]].forEach(([x,y])=>a(4,STAR(x,y,14,4,.42)));
+ for(const sd of [1,-1]){const X=x=>sd>0?x:600-x,A=g=>sd>0?g:180-g;
+  a(2,sd>0?'M292 280C230 90 60 60 45 170C30 270 150 320 292 310Z':'M308 280C370 90 540 60 555 170C570 270 450 320 308 310Z');
+  a(5,sd>0?'M292 320C170 320 90 380 115 470C140 545 255 500 292 345Z':'M308 320C430 320 510 380 485 470C460 545 345 500 308 345Z');
+  const ux=X(168),uy=200;
+  a(3,SC(ux,uy,80,80,12,.6)); a(12,C(ux,uy,60));
+  ring(10,g=>a(4,PETALAT(ux,uy,22,57,13,A(g))));
+  a(10,C(ux,uy,21)); a(8,C(ux,uy,9));
+  ring(12,g=>{const [x,y]=rot(ux,uy,70,g);a(8,C(x,y,5));});
+  [[80,190],[108,268],[122,118],[245,292],[262,118]].forEach(([x,y],i)=>a(i%2?6:7,C(X(x),y,i%2?9:11)));
+  const lx=X(198),ly=418;
+  a(11,SC(lx,ly,50,50,10,.6)); a(5,C(lx,ly,37));
+  ring(8,g=>a(3,PETALAT(lx,ly,13,35,10,A(g))));
+  a(4,C(lx,ly,12));
+  [[135,470],[250,470],[150,370]].forEach(([x,y])=>a(12,C(X(x),y,8)));}
+ a(9,E(300,320,15,112)); a(9,C(300,192,24));
+ ring(6,(g,i)=>a(i%2?2:3,E(300,262+i*22,11,6)),0);
+ l('M292 175C278 135 258 120 244 115M308 175C322 135 342 120 356 115');
+ a(9,C(242,113,8)); a(9,C(358,113,8));
+ d('#fff',C(292,186,4)); d('#fff',C(308,186,4));
+});
+
+pic({id:'owl-mandala',name:'Owl Mandala',theme:'patterns',level:2,
+ pal:['#2d3a6b','#fff3b0','#ffd84d','#8b5a3c','#7ed37a','#d08c55','#f6e3c2','#ff9f5a','#ffffff','#7cc4ff','#b48cff','#2d2a32','#e0457b']},(a,l,d)=>{
+ a(1,R(0,0,600,600)); a(2,C(520,80,44));
+ [[70,70,16],[160,40,10],[60,200,11],[540,220,12],[450,40,9]].forEach(([x,y,r])=>a(3,STAR(x,y,r)));
+ a(4,'M0 548C150 530 450 535 600 515L600 552C450 568 150 572 0 585Z');
+ [[70,525,-25],[520,505,20],[560,548,30],[40,566,15]].forEach(([x,y,g])=>a(5,E(x,y,34,13,g)));
+ a(6,P(170,190,150,70,240,150)); a(6,P(430,190,450,70,360,150));
+ a(6,E(300,340,165,215));
+ a(7,E(300,410,104,130));
+ for(let y=318;y<=520;y+=30){const row=(y-318)/30;for(let x=212+(row%2)*15;x<=388;x+=30){
+  if(((x-300)/96)**2+((y-410)/122)**2<.95)a(row%2?8:9,`M${x-14} ${y}A14 14 0 0 0 ${x+14} ${y}Z`);}}
+ for(const sd of [1,-1]){const X=x=>sd>0?x:600-x,A=g=>sd>0?g:180-g;
+  a(4,sd>0?'M160 290C110 370 118 470 190 535C206 455 210 375 196 290Z':'M440 290C490 370 482 470 410 535C394 455 390 375 404 290Z');
+  [[168,340],[166,390],[172,440],[184,490]].forEach(([x,y],i)=>a(i%2?8:6,E(X(x),y,11,19,sd*(-10))));
+  const ex=X(232),ey=236;
+  a(10,SC(ex,ey,72,72,14,.6)); a(9,C(ex,ey,56));
+  ring(12,g=>a(11,PETALAT(ex,ey,27,54,9,A(g))));
+  a(3,C(ex,ey,26)); a(12,C(ex,ey,12));}
+ a(8,'M286 296H314L300 330Z');
+ a(8,'M244 545Q252 523 260 543Q268 523 276 543Q284 523 292 545Z'); a(8,'M308 545Q316 523 324 543Q332 523 340 543Q348 523 356 545Z');
+ a(13,HEART(300,170,14));
+ d('#fff',C(239,229,5)); d('#fff',C(368,229,5));
+});
+
+pic({id:'glass-unicorn',name:'Stained-Glass Unicorn',theme:'patterns',level:2,
+ pal:['#7cc4ff','#b48cff','#ff8cc6','#5fd3a5','#ffd84d','#4a68ad','#ffffff','#ff9f5a','#ffcf33','#ffc9e2','#3d3d5c']},(a,l,d)=>{
+ const r=rng(7),N=8,S=600/N,pts=[];
+ for(let j=0;j<=N;j++){pts[j]=[];for(let i=0;i<=N;i++){const edge=i===0||j===0||i===N||j===N;
+  pts[j][i]=[f(i*S+(edge&&(i===0||i===N)?0:(r()-.5)*S*.6)),f(j*S+(edge&&(j===0||j===N)?0:(r()-.5)*S*.6))];}}
+ const glass=[1,2,3,4,5,6];
+ for(let j=0;j<N;j++)for(let i=0;i<N;i++){const p00=pts[j][i],p10=pts[j][i+1],p01=pts[j+1][i],p11=pts[j+1][i+1];
+  a(glass[Math.floor(r()*glass.length)],P(...p00,...p10,...p11));a(glass[Math.floor(r()*glass.length)],P(...p00,...p11,...p01));}
+ a(7,P(345,275,372,205,394,292)); a(10,P(356,268,372,228,383,280));
+ a(7,'M470 600C470 500 450 400 400 330C380 300 350 270 320 262C290 255 260 262 240 280C215 300 190 340 185 370C180 395 195 415 225 415C260 415 290 405 315 410C340 420 345 460 330 520C320 560 320 590 320 600Z');
+ a(10,E(207,388,34,27,-25));
+ a(3,'M332 256C300 228 258 238 248 276C272 262 300 266 326 292Z');
+ a(2,'M350 265C400 230 452 262 440 322C420 302 396 302 382 320C386 300 372 282 350 265Z');
+ a(6,'M386 318C452 302 502 352 480 412C460 386 436 386 421 401C421 371 406 342 386 318Z');
+ a(4,'M421 398C491 392 531 452 506 512C488 487 466 482 451 497C453 462 441 427 421 398Z');
+ a(5,'M451 492C521 497 561 560 541 600L471 600C471 560 466 522 451 492Z');
+ a(9,'M262 270L248 158L302 258Z');
+ a(11,E(264,320,13,16)); a(10,E(250,362,18,11));
+ l('M256 232L290 224M253 205L280 199M250 180L268 176');
+ l('M196 384q6 -7 12 1M252 305l-9 -9M259 302l-4 -12M268 302l1 -12');
+ d('#fff',C(268,313,4));
+});
+
 const THEMES=[{id:'all',name:'All'},{id:'animals',name:'Animals',ic:'🐾'},{id:'unicorns',name:'Unicorns',ic:'🦄'},{id:'fairies',name:'Fairies',ic:'🧚'},{id:'mermaids',name:'Mermaids',ic:'🧜‍♀️'},{id:'bugs',name:'Bugs',ic:'🐞'},{id:'patterns',name:'Patterns',ic:'✨'},{id:'gallery',name:'My Gallery',ic:'⭐'}];
 const PROFILES=[
  {id:'lilly',name:'Lilly',age:6,hair:'#f5d26b',shirt:'#ff8cc6',style:'long',tol:14,minLabel:10,lvl:2},
